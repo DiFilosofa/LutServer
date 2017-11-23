@@ -1,0 +1,33 @@
+{
+  "name": "BananaServer",
+  "version": "1.0.0",
+  "description": "The server for Banana-HCM's traffic information IOS app",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DiFilosofa/bananaserver.git"
+  },
+  "keywords": [],
+  "author": "TQN",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DiFilosofa/bananaserver/issues"
+  },
+  "homepage": "https://github.com/DiFilosofa/bananaserver#readme",
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  },
+  "dependencies": {
+    "body-parser": "^1.18.2",
+    "express": "^4.15.4",
+    "jsonwebtoken": "^8.1.0",
+    "mongodb": "^2.2.31",
+    "mongoose": "^4.11.14",
+    "mongoose-ttl": "0.0.3",
+    "password-hash": "^1.2.2"
+  }
+}
