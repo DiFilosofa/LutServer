@@ -14,10 +14,7 @@ var mongoose = require('mongoose'),
 exports.createEvent = function (req,res) {
     var body = req.body;
     if(!body.userId){
-        return utils.result(res,code.badRequest,msg.userNotFound,null);
-    }
-    if(!body.name){
-        return utils.result(res,code.badRequest,msg.nameNotFound,null)
+        return utils.result(res,code.badRequest,msg.noUserId,null);
     }
     if(!body.latitude){
         return utils.result(res,code.badRequest,msg.latitudeNotFound,null);
@@ -25,46 +22,26 @@ exports.createEvent = function (req,res) {
     if(!body.longitude){
         return utils.result(res,code.badRequest,msg.longitudeNotFound,null);
     }
-    if(!body.end_latitude){
-        return utils.result(res,code.badRequest,msg.endLatitudeNotFound,null);
+    if(!body.water_level){
+        return utils.result(res,code.badRequest,msg.waterLevelNotFound,null);
     }
-    if(!body.end_longitude){
-        return utils.result(res,code.badRequest,msg.endLongitudeNotFound,null);
+    if(body.water_level > 4 || body.water_level < 0){
+        return utils.result(res,code.badRequest,msg.invalidWaterLevel,null);
     }
-    if(body.eventType && (body.eventType > 4 || body.eventType < 0)){
-        return utils.result(res,code.badRequest,msg.invalidEventType,null);
+    if(!body.radius){
+        return utils.result(res,code.badRequest,msg.radiusNotFound,null);
     }
-    if(body.density && (body.density < 0 || body.density >4)){
-        return utils.result(res,code.badRequest,msg.invalidDensity,null);
+    if(body.radius <= 0){
+        return utils.result(res,code.badRequest,msg.invalidRadius,null);
     }
-    if(body.motorbike_speed && (body.motorbike_speed <0 || body.motorbike_speed > 3)){
-        return utils.result(res,code.badRequest,msg.invalidMotorbikeSpeed,null);
+    if(!body.reasons || body.reasons.size === 0){
+        return utils.result(res,code.badRequest,msg.reasonsEmptyOrNull,null);
     }
-    if(body.car_speed && (body.car_speed <0 || body.car_speed > 3)){
-        return utils.result(res,code.badRequest,msg.invalidCarSpeed,null);
+    if(body.estimated_duration && body.estimated_duration < 300){
+        return utils.result(res,code.badRequest,msg.invalidDuration,null);
     }
-    var expiredTime = 0;
-    switch (body.density){
-        case 0:
-            expiredTime = '5m'; //minute
-            break;
-        case 1:
-            expiredTime = '15m'; //minute
-            break;
-        case 2:
-            expiredTime = '25m'; //minue
-            break;
-        case 3:
-            expiredTime = '35m';
-            break;
-        case 4:
-            expiredTime = '45m';
-            break;
-    }
-
     var newEvent = Event(body);
-    newEvent.ttl = expiredTime;
-
+    newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '10m';
     User.findOne({
         _id:body.userId
     },function (err,userExist) {
@@ -139,16 +116,9 @@ exports.getAllEvents = function (req,res) {
 };
 
 exports.getEventById = function (req,res) {
-    Event.findOne({
+    console.log("Ádjkhạkldálkdjákldj"+req.params.eventId);
+    Event.find({
            _id:req.params.eventId
-        }, function (err,eventExist) {
-            if(err){
-                console.log(err);
-                return utils.result(res,code.serverError,msg.serverError,null);
-            }
-            if(!eventExist){
-                return utils.result(res,code.notFound,msg.eventNotFound,null);
-            }
         })
         .populate('Point')
         .exec(function (err,result) {
@@ -156,33 +126,31 @@ exports.getEventById = function (req,res) {
                 console.log(err);
                 return utils.result(res,code.serverError,msg.serverError,null);
             }
+            if(!result || result.size === 0){
+                return utils.result(res,code.badRequest,msg.eventNotFound,null);
+            }
+            console.log("size"+result.size+"-"+result);
             return utils.result(res, code.success, msg.success, result);
         })
 };
 
 exports.updateEventById = function (req,res) {
     var body = req.body;
-    if(req.body._id){
-        return utils.result(res,code.badRequest,msg.noUpdateUserId,null);
+    if(body.water_level && (body.water_level > 4 || body.water_level < 0)){
+        return utils.result(res,code.badRequest,msg.invalidWaterLevel,null);
     }
-    if(body.eventType && (body.eventType > 4 || body.eventType < 0)){
-        return utils.result(res,code.badRequest,msg.invalidEventType,null);
+    if(body.radius <= 0){
+        return utils.result(res,code.badRequest,msg.invalidRadius,null);
     }
-    if(body.density && (body.density < 0 || body.density >4)){
-        return utils.result(res,code.badRequest,msg.invalidDensity,null);
+    if(!body.reasons || body.reasons.size === 0){
+        return utils.result(res,code.badRequest,msg.reasonsEmptyOrNull,null);
     }
-    if(body.motorbike_speed && (body.motorbike_speed <0 || body.motorbike_speed > 3)){
-        return utils.result(res,code.badRequest,msg.invalidMotorbikeSpeed,null);
-    }
-    if(body.car_speed && (body.car_speed <0 || body.car_speed > 3)){
-        return utils.result(res,code.badRequest,msg.invalidCarSpeed,null);
-    }
-
     Event.findByIdAndUpdate(req.params.eventId, body,{new: true}, function (err, event) {
         if(!event)
             return utils.result(res, code.notFound, msg.eventNotFound, null);
         if(err)
             return utils.result(res,code.serverError,msg.serverError,null);
+        ///////Must handle update ttl
         return utils.result(res, code.success, msg.success, event);
     });
 };
@@ -198,15 +166,10 @@ exports.deleteEvent = function (req,res) {
             Event.remove({
                 _id:req.params.eventId
             }, function (err, deleted) {
-                if(!deleted){
-                    return utils.result(res, code.notFound, msg.eventNotFound, null);
-                }
                 if(err) {
                     return utils.result(res,code.serverError,msg.serverError,null);
                 }
-                if(deleted){
-                    return utils.result(res, code.success, msg.success, null);
-                }
+                return utils.result(res, code.success, msg.success, null);
             });
         }
         else{
