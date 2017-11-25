@@ -13,7 +13,7 @@ module.exports = function(app) {
     apiRoutes.post('/user',users.createUser);
     apiRoutes.post('/user/login',users.login);
     apiRoutes.get('/user',users.getAllUser);
-    apiRoutes.get('/events/:userId',events.getAllEvents);
+    apiRoutes.get('/eventsAll/:userId',events.getAllEvents);
     apiRoutes.get('/events/:eventId',events.getEventById);
     apiRoutes.get('/leaderboard',users.getLeaderboardAllTime);
     apiRoutes.get('/leaderboard/month/:time',users.getLeaderboardByMonth);
