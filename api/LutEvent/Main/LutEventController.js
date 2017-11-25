@@ -41,7 +41,7 @@ exports.createEvent = function (req,res) {
         return utils.result(res,code.badRequest,msg.invalidDuration,null);
     }
     var newEvent = Event(body);
-    newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '10m';
+    // newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '10m';
     User.findOne({
         _id:body.userId
     },function (err,userExist) {
@@ -116,7 +116,6 @@ exports.getAllEvents = function (req,res) {
 };
 
 exports.getEventById = function (req,res) {
-    console.log("Ádjkhạkldálkdjákldj"+req.params.eventId);
     Event.find({
            _id:req.params.eventId
         })

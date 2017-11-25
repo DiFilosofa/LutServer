@@ -59,6 +59,6 @@ var lutEventSchema = new Schema({
         type:Boolean
     }
 });
- lutEventSchema.plugin(ttl);
+ // lutEventSchema.plugin(ttl);
 var EventModel = mongoose.model('LutEvent',lutEventSchema);
 module.exports = EventModel;
