@@ -8,10 +8,6 @@ var lutEventSchema = new Schema({
         type: String,
         required:true
     },
-    name:{
-        type:String,
-        required:true
-    },
     created_at:{
         type:Date,
         default: Date.now
@@ -20,70 +16,37 @@ var lutEventSchema = new Schema({
         type:Date,
         default: Date.now
     },
-    eventType:{
-        type:Number,
-        default:0,
-        min:0,
-        max:3
-    },
     latitude:{
         type:Number,
         required:true
     },
-    longitude:{
+    longitude: {
+        type: Number,
+        required: true
+    },
+    water_level:{
         type:Number,
+        min:0,
+        max:4,
         required:true
     },
-    end_latitude:{
+    radius:{
+        type: Number,
+        default: 0
+    },
+    reasons:[{
         type:Number,
         required:true
+    }],
+    estimated_duration:{ ///Seconds
+        type: Number,
+        default: 600
     },
-    end_longitude:{
-        type:Number,
-        required:true
-    },
+    media_link:[{
+        type:String
+    }],
     note: {
         type: String
-    },
-    density:{
-        type:Number,
-        default:3,
-        min:0,
-        max:4
-    },
-    motorbike_speed:{
-        type:Number,
-        default:1,
-        min:0,
-        max:3
-    },
-    car_speed:{
-        type:Number,
-        default:1,
-        min:0,
-        max:3
-    },
-    has_rain:{
-        type:Boolean,
-        default:false
-    },
-    has_accident:{
-        type:Boolean,
-        default:false
-    },
-    should_travel:{
-        type:Boolean,
-        default:false
-    },
-    has_flood:{
-        type:Boolean,
-        default:false
-    },
-    district:{
-        type:Number,
-        min:0,
-        max:24,
-        default:0
     },
     Point:{
         type:Schema.ObjectId,
@@ -96,6 +59,6 @@ var lutEventSchema = new Schema({
         type:Boolean
     }
 });
-lutEventSchema.plugin(ttl,{ttl:60000});
+ lutEventSchema.plugin(ttl);
 var EventModel = mongoose.model('LutEvent',lutEventSchema);
 module.exports = EventModel;
