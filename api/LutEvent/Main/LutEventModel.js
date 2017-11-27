@@ -37,10 +37,10 @@ var lutEventSchema = new Schema({
         type: Number,
         default: 0
     },
-    reasons:[{
+    reasons:{
         type:Number,
         required:true
-    }],
+    },
     estimated_duration:{ ///Seconds
         type: Number,
         default: 600
