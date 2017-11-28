@@ -29,8 +29,6 @@ var lutEventSchema = new Schema({
     },
     water_level:{
         type:Number,
-        min:0,
-        max:4,
         required:true
     },
     radius:{

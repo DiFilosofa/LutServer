@@ -25,9 +25,6 @@ exports.createEvent = function (req,res) {
     if(!body.water_level){
         return utils.result(res,code.badRequest,msg.waterLevelNotFound,null);
     }
-    if(body.water_level > 4 || body.water_level < 0){
-        return utils.result(res,code.badRequest,msg.invalidWaterLevel,null);
-    }
     if(!body.radius){
         return utils.result(res,code.badRequest,msg.radiusNotFound,null);
     }
@@ -135,9 +132,6 @@ exports.getEventById = function (req,res) {
 
 exports.updateEventById = function (req,res) {
     var body = req.body;
-    if(body.water_level && (body.water_level > 4 || body.water_level < 0)){
-        return utils.result(res,code.badRequest,msg.invalidWaterLevel,null);
-    }
     if(body.radius <= 0){
         return utils.result(res,code.badRequest,msg.invalidRadius,null);
     }
