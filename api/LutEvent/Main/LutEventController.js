@@ -31,7 +31,7 @@ exports.createEvent = function (req,res) {
     if(body.radius <= 0){
         return utils.result(res,code.badRequest,msg.invalidRadius,null);
     }
-    if(!body.reasons || body.reasons.size === 0){
+    if(!body.reasons){
         return utils.result(res,code.badRequest,msg.reasonsEmptyOrNull,null);
     }
     if(body.estimated_duration && body.estimated_duration < 300){
@@ -132,11 +132,8 @@ exports.getEventById = function (req,res) {
 
 exports.updateEventById = function (req,res) {
     var body = req.body;
-    if(body.radius <= 0){
+    if(body.radius && body.radius <= 0){
         return utils.result(res,code.badRequest,msg.invalidRadius,null);
-    }
-    if(!body.reasons || body.reasons.size === 0){
-        return utils.result(res,code.badRequest,msg.reasonsEmptyOrNull,null);
     }
     Event.findByIdAndUpdate(req.params.eventId, body,{new: true}, function (err, event) {
         if(!event)
