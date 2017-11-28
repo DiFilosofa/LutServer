@@ -51,6 +51,12 @@ var lutEventSchema = new Schema({
     note: {
         type: String
     },
+    district:{
+        type:Number,
+        min:0,
+        max:24,
+        default:0
+    },
     Point:{
         type:Schema.ObjectId,
         ref:'LutEventPoint'
