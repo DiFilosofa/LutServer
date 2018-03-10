@@ -19,6 +19,10 @@ var lutEventSchema = new Schema({
         type: Date,
         default: Date.now
     },
+    validity: {
+        type: Number,
+        default: 0
+    },
     latitude: {
         type: Number,
         required: true
@@ -57,9 +61,6 @@ var lutEventSchema = new Schema({
         ref: 'LutEventPoint'
     },
     isUpvoted: {
-        type: Boolean
-    },
-    isDownvoted: {
         type: Boolean
     },
     mediaDatas: [{

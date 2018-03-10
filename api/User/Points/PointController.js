@@ -41,7 +41,7 @@ exports.updatePoint = function(userId,pointUpdate){
 
 function updateUserSumPoint(user,point) {
     user.update(
-        {$inc:{point_sum:point}},
+        {$inc:{reputation:point}},
         function (err) {
             if(err){
                 console.log(err);

@@ -41,9 +41,9 @@ var userSchema = new Schema({
         type: Date,
         default: Date.now
     },
-    point_sum: {
+    reputation: {
         type: Number,
-        default: 0
+        default: 0.01
     },
     UserPoints: [{
         type: Schema.ObjectId,
