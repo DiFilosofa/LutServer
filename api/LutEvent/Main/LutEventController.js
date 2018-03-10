@@ -62,7 +62,7 @@ exports.createEvent = function (req, res) {
         return utils.result(res, code.badRequest, msg.invalidDuration, null);
     }
     var newEvent = Event(body);
-    newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '10m';
+    newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '30m';
     User.findOne({
         _id: body.userId
     }, function (err, userExist) {
@@ -73,13 +73,15 @@ exports.createEvent = function (req, res) {
             console.log(err);
             return utils.result(res, code.serverError, msg.serverError, null);
         }
+        newEvent.validity = userExist.reputation * 0.01; //init validity
         newEvent.save(function (err, event) {
             if (err) {
                 console.log(err);
                 return utils.result(res, code.serverError, msg.serverError, null);
             }
             var eventPoint = new EventPoint({
-                event_id: event._id
+                event_id: event._id,
+                userId: event.userId
             });
             eventPoint.save(function (err) {
                 if (err) {
@@ -117,18 +119,7 @@ exports.getAllEvents = function (req, res) {
             if (parseInt(userId) !== -1) {
                 for (var index = 0; index < numberOfEvents; index++) {
                     var temp = results[index].toJSON();
-                    if ((results[index].Point.UpvoteUsers.indexOf(userId) > -1)) {
-                        temp.isUpvoted = true;
-                        temp.isDownvoted = false;
-                    }
-                    else if (results[index].Point.DownvoteUsers.indexOf(userId) > -1) {
-                        temp.isDownvoted = true;
-                        temp.isUpvoted = false;
-                    }
-                    else {
-                        temp.isUpvoted = false;
-                        temp.isDownvoted = false;
-                    }
+                    temp.isUpvoted = (results[index].Point.VotedUsers.indexOf(userId) > -1);
                     tempList[index] = temp;
                 }
             }
@@ -149,7 +140,6 @@ exports.getEventById = function (req, res) {
             if (!result || result.size === 0) {
                 return utils.result(res, code.badRequest, msg.eventNotFound, null);
             }
-            console.log("size" + result.size + "-" + result);
             return utils.result(res, code.success, msg.success, result);
         })
 };
@@ -215,24 +205,7 @@ exports.updateEventPhotos = function (req, res) {
                     })
                 });
                 var url = aws_s3.dataUrlInitial + imageName;
-                var expiredTime = 0;
-                switch (event.density) {
-                    case 0:
-                        expiredTime = '5m'; //minute
-                        break;
-                    case 1:
-                        expiredTime = '15m'; //minute
-                        break;
-                    case 2:
-                        expiredTime = '25m'; //minue
-                        break;
-                    case 3:
-                        expiredTime = '35m';
-                        break;
-                    case 4:
-                        expiredTime = '45m';
-                        break;
-                }
+                var expiredTime = event.estimated_duration + 's';
 
                 event.ttl = expiredTime;
                 ///update media datas
@@ -281,126 +254,97 @@ exports.deleteEvent = function (req, res) {
         }
     });
 };
-exports.upvote = function (req, res) {
+exports.vote = function (req, res) {
     var body = req.body;
     if (!body.userId) {
         return utils.result(res, code.badRequest, msg.noUserId, null);
     }
-    EventPoint.findOne(
-        {
-            event_id: req.params.eventId
-        },
-        function (err, eventPoint) {
-            if (err) {
-                console.log(err);
-                return utils.result(res, code.serverError, msg.serverError, null);
-            }
-            if (!eventPoint) {
-                return utils.result(res, code.notFound, msg.eventNotFound, null);
-            }
-            //check if the user exist in upvote list
-            var upvoted = eventPoint.UpvoteUsers.indexOf(body.userId) > -1;
-            if (upvoted) {//if user is in upvotes list
-                eventPoint.upvotes += -1; //decrease upvotes
-                var index = eventPoint.UpvoteUsers.indexOf(body.userId);
-                eventPoint.UpvoteUsers.splice(index, 1); //remove user from upvote list
-                eventPoint.save(function (err, newEventPoint) {
-                    if (err) {
-                        console.log(err);
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    }
-                    if (updateUserPoint(-1, newEventPoint.event_id) === false) //decrease user point by 1
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    return utils.result(res, code.success, msg.success, newEventPoint);
-                });
-            }
-            else { //if user is not in upvote list
-                var userPointToUpdate = 1;
-                eventPoint.upvotes += 1; //increase event upvotes
-                eventPoint.UpvoteUsers.push(body.userId); //push user in upvote list
-
-                var downvoted = eventPoint.DownvoteUsers.indexOf(body.userId) > -1;
-                if (downvoted) {//if user is in downvotes list
-                    //remove them from it and decrease the downvote
-                    var index = eventPoint.DownvoteUsers.indexOf(body.userId);
-                    eventPoint.DownvoteUsers.splice(index, 1); //rm
-                    eventPoint.downvotes += -1; //decrease downvotes
-                    userPointToUpdate = 2;
-                }
-
-                eventPoint.save(function (err, newEventPoint) {
-                    if (err) {
-                        console.log(err);
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    }
-                    if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false)
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    return utils.result(res, code.success, msg.success, newEventPoint);
-                });
-            }
-        }
-    );
-};
-
-exports.downvote = function (req, res) {
-    var body = req.body;
-    if (!body.userId) {
-        return utils.result(res, code.badRequest, msg.noUserId, null);
+    if (!body.score) {
+        return utils.result(res, code.badRequest, msg.noScore, null);
     }
-    EventPoint.findOne(
+    Event.findOne(
         {
-            event_id: req.params.eventId
-        },
-        function (err, eventPoint) {
-            if (err) {
-                console.log(err);
-                return utils.result(res, code.serverError, msg.serverError, null);
-            }
-            if (!eventPoint) {
-                return utils.result(res, code.notFound, msg.eventNotFound, null);
-            }
-            //check if the user exist in down list
-            var downvoted = eventPoint.DownvoteUsers.indexOf(body.userId) > -1;
-            if (downvoted) { //if user is in downvote list
-                eventPoint.downvotes += -1; //decrease downvote by 1
-                var index = eventPoint.DownvoteUsers.indexOf(body.userId);
-                eventPoint.DownvoteUsers.splice(index, 1); //remove user from downvote list
-                eventPoint.save(function (err, newEventPoint) {
-                    if (err) {
-                        console.log(err);
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    }
-                    if (updateUserPoint(1, newEventPoint.event_id) === false) //increase userPoint by 1
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    return utils.result(res, code.success, msg.success, newEventPoint);
-                });
-            }
-            else {//user is not in downvote list
-                eventPoint.downvotes += 1; //increase downvotes
-                eventPoint.DownvoteUsers.push(body.userId);//add user to downvote list
-                var userPointToUpdate = -1;
-
-                var upvoted = eventPoint.UpvoteUsers.indexOf(body.userId) > -1;
-                if (upvoted) {//if user is in upvotes list
-                    //remove them from it and decrease the upvote
-                    var index = eventPoint.UpvoteUsers.indexOf(body.userId);
-                    eventPoint.UpvoteUsers.splice(index, 1); //rm
-                    eventPoint.upvotes += -1; //decrease upvote
-                    userPointToUpdate = -2;
-                }
-
-                eventPoint.save(function (err, newEventPoint) {
-                    if (err) {
-                        console.log(err);
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    }
-                    if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false)
-                        return utils.result(res, code.serverError, msg.serverError, null);
-                    return utils.result(res, code.success, msg.success, newEventPoint);
-                });
-            }
+            _id: req.params.eventId
         }
-    );
+    ).populate('Point')
+        .exec(
+            function (err, event) {
+                if (err) {
+                    console.log(err);
+                    return utils.result(res, code.serverError, msg.serverError, null);
+                }
+                if (!event) {
+                    return utils.result(res, code.notFound, msg.eventNotFound, null);
+                }
+                if (event.userId === body.userId) {
+                    return utils.result(res, code.badRequest, msg.sameUserVote, null);
+                }
+                User.findOne(
+                    {
+                        _id: body.userId
+                    }, function (err, user) {
+                        if (!user) {
+                            console.log(err);
+                            return utils.result(res, code.badRequest, msg.userNotFound, null);
+                        }
+                        if (err) {
+                            console.log(err);
+                            return utils.result(res, code.serverError, msg.serverError, null);
+                        }
+                        EventPoint.findOne(
+                            {
+                                _id: event.Point
+                            },
+                            function (err, eventPoint) {
+                                //check if the user exist in vote list
+                                var voted = eventPoint.VotedUsers.indexOf(body.userId) > -1;
+                                if (!voted) {
+                                    eventPoint.scoreSum = eventPoint.scoreSum + body.score; //update score sum
+                                    eventPoint.VotedUsers.push(body.userId); //push user in upvote list
+                                }
+                                var numberOfVotes = eventPoint.VotedUsers.length;
+
+                                if (numberOfVotes < 2) {
+                                    eventPoint.save(function (err, newEventPoint) {
+                                        // var userPointToUpdate = 1;
+                                        if (err) {
+                                            console.log(err);
+                                            return utils.result(res, code.serverError, msg.serverError, null);
+                                        }
+                                        event.save(function (err, newEvent) {
+                                            if (err) {
+                                                console.log(err);
+                                                return utils.result(res, code.serverError, msg.serverError, null);
+                                            }
+                                            // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
+                                            //     return utils.result(res, code.serverError, msg.serverError, null);
+                                            // }
+                                            return utils.result(res, code.success, msg.success, newEvent);
+                                        });
+                                    });
+                                }
+                                else {
+                                    eventPoint.points = eventPoint.scoreSum / numberOfVotes;
+                                    eventPoint.save();
+                                    event.validity = user.reputation * eventPoint.points;
+                                    event.save(function (err, newEvent) {
+                                            if (err) {
+                                                console.log(err);
+                                                return utils.result(res, code.serverError, msg.serverError, null);
+                                            }
+                                            // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
+                                            //     return utils.result(res, code.serverError, msg.serverError, null);
+                                            // }
+                                            return utils.result(res, code.success, msg.success, newEvent);
+                                        }
+                                    );
+                                }
+                            }
+                        );
+                    }
+                );
+            }
+        );
 };
 
 function updateUserPoint(pointUpdate, eventId) {

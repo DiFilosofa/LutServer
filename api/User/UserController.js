@@ -177,7 +177,7 @@ exports.createUser = function (req, res) {
                                 _id: user._id,
                                 email: user.email,
                                 UserPoints: user.UserPoints,
-                                point_sum: user.point_sum,
+                                reputation: user.reputation,
                                 created_at: user.created_at,
                                 level: user.level,
                                 phone: user.phone,
@@ -358,7 +358,7 @@ exports.getLeaderboardAllTime = function (req, res) {
             confirmPassword: 0,
             queryTimePoints: 0
         })
-        .sort({point_sum: -1})
+        .sort({reputation: -1})
         .populate('UserPoints')
         .exec(function (err, results) {
             if (err) {
