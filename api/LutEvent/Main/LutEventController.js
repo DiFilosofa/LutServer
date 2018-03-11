@@ -324,26 +324,44 @@ exports.vote = function (req, res) {
                                             // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
                                             //     return utils.result(res, code.serverError, msg.serverError, null);
                                             // }
-                                            return utils.result(res, code.success, msg.success, newEvent);
+                                            Event.findOne(
+                                                {
+                                                    _id: req.params.eventId
+                                                })
+                                                .populate('Point')
+                                                .exec(function (err, result) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                        return utils.result(res, code.serverError, msg.serverError, null);
+                                                    }
+                                                    return utils.result(res, code.success, msg.success, result);
+                                                })
                                         });
                                     });
                                 }
                                 else {
                                     eventPoint.points = eventPoint.scoreSum / numberOfVotes;
                                     event.validity = user.reputation * eventPoint.points;
-                                    eventPoint.save(function (err, newEventPoint) {
+                                    eventPoint.save();
+                                    event.save(function (err, newEvent) {
                                         if (err) {
                                             console.log(err);
                                             return utils.result(res, code.serverError, msg.serverError, null);
                                         }
-                                        event.save(function (err, newEvent) {
-                                            if (err) {
-                                                console.log(err);
-                                                return utils.result(res, code.serverError, msg.serverError, null);
-                                            }
-                                            return utils.result(res, code.success, msg.success, newEvent);
-                                        })
+                                        Event.findOne(
+                                            {
+                                                _id: req.params.eventId
+                                            })
+                                            .populate('Point')
+                                            .exec(function (err, result) {
+                                                if (err) {
+                                                    console.log(err);
+                                                    return utils.result(res, code.serverError, msg.serverError, null);
+                                                }
+                                                return utils.result(res, code.success, msg.success, result);
+                                            })
                                     });
+
                                 }
                             }
                         );
