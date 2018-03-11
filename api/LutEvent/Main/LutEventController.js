@@ -330,19 +330,20 @@ exports.vote = function (req, res) {
                                 }
                                 else {
                                     eventPoint.points = eventPoint.scoreSum / numberOfVotes;
-                                    eventPoint.save();
                                     event.validity = user.reputation * eventPoint.points;
-                                    event.save(function (err, newEvent) {
+                                    eventPoint.save(function (err, newEventPoint) {
+                                        if (err) {
+                                            console.log(err);
+                                            return utils.result(res, code.serverError, msg.serverError, null);
+                                        }
+                                        event.save(function (err, newEvent) {
                                             if (err) {
                                                 console.log(err);
                                                 return utils.result(res, code.serverError, msg.serverError, null);
                                             }
-                                            // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
-                                            //     return utils.result(res, code.serverError, msg.serverError, null);
-                                            // }
                                             return utils.result(res, code.success, msg.success, newEvent);
-                                        }
-                                    );
+                                        })
+                                    });
                                 }
                             }
                         );
