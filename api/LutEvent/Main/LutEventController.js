@@ -62,7 +62,12 @@ exports.createEvent = function (req, res) {
         return utils.result(res, code.badRequest, msg.invalidDuration, null);
     }
     var newEvent = Event(body);
-    newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '30m';
+    // if (body.estimated_duration) {
+    //     newEvent.ttl = body.estimated_duration.toString() + 's';
+    // }
+    // else {
+    //     newEvent.ttl = '30m';
+    // }
     User.findOne({
         _id: body.userId
     }, function (err, userExist) {
@@ -205,9 +210,9 @@ exports.updateEventPhotos = function (req, res) {
                     })
                 });
                 var url = aws_s3.dataUrlInitial + imageName;
-                var expiredTime = event.estimated_duration + 's';
-
-                event.ttl = expiredTime;
+                // var expiredTime = event.estimated_duration + 's';
+                //
+                // event.ttl = expiredTime;
                 ///update media datas
                 event.mediaDatas.push(url);
                 event.save();

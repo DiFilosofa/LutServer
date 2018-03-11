@@ -67,6 +67,6 @@ var lutEventSchema = new Schema({
         type: String
     }]
 });
-lutEventSchema.plugin(ttl);
+// lutEventSchema.plugin(ttl);
 var EventModel = mongoose.model('LutEvent', lutEventSchema);
 module.exports = EventModel;
