@@ -371,15 +371,47 @@ exports.vote = function (req, res) {
         );
 };
 
-function updateUserPoint(pointUpdate, eventId) {
-    Event.findOne(
-        {_id: eventId},
-        function (err, event) {
+// function updateUserPoint(pointUpdate, userId) {
+//     Event.findOne(
+//         {_id: eventId},
+//         function (err, event) {
+//             if (err) {
+//                 console.log(err);
+//                 return false;
+//             }
+//             return UserPointController.updateUserReputation(event.userId, pointUpdate)
+//         }
+//     );
+// }
+
+exports.reevaluate = function (res) {
+    if (updateUserValidity(res)) {
+        clusterData()
+    }
+};
+
+function clusterData() {
+
+}
+
+function updateUserValidity(res) {
+    Event.find()
+        .populate('Point')
+        .exec(function (err, results) {
             if (err) {
-                console.log(err);
-                return false;
+                console.log('err');
+                return utils.result(res, code.serverError, msg.serverError, null);
             }
-            return UserPointController.updatePoint(event.userId, pointUpdate)
-        }
-    );
+            results.forEach(function (element) {
+                User.findOne({
+                    _id: element.userId
+                }, function (err, user) {
+                    if (err) {
+                        console.log('err');
+                        return utils.result(res, code.serverError, msg.serverError, null);
+                    }
+                    return UserPointController.updateUserReputation(element.userId, element.Point.points)
+                })
+            });
+        })
 }

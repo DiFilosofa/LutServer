@@ -394,7 +394,7 @@ exports.getLeaderboardByMonth = function (req, res) {
 
                 for (var index = 0; index < numberOfMonth; index++) {
                     if (listOfPoint[index].month === dateInput.getMonth() && listOfPoint[index].year === dateInput.getFullYear()) {
-                        users[i].queryTimePoints = listOfPoint[index].point;
+                        users[i].queryTimePoints = listOfPoint[index].reputation;
                         tempList.push(users[i]);
                         break;
                     }
@@ -436,7 +436,7 @@ exports.getLeaderboardByYear = function (req, res) {
                 users[i].queryTimePoints = 0;
                 for (var index = 0; index < numberOfMonth; index++) {
                     if (listOfPoint[index].year === yearInput) {
-                        users[i].queryTimePoints += listOfPoint[index].point;
+                        users[i].queryTimePoints += listOfPoint[index].reputation;
                         tempList.push(users[i]);
                         break;
                     }
