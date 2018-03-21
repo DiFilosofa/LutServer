@@ -123,7 +123,7 @@ exports.getAllCluster = function (req, res) {
                             tempEvent.isUpvoted = (tempEventList[eventIndex].Point.VotedUsers.indexOf(userId) > -1);
                             tempEventList[eventIndex] = tempEvent;
                         }
-                        tempClusterList[clusterIndex] = tempEventList;
+                        tempClusterList[clusterIndex].Event = tempEventList;
                     }
                     return utils.result(res, code.success, msg.success, tempClusterList);
 
