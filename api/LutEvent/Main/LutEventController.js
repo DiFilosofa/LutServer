@@ -285,7 +285,7 @@ exports.vote = function (req, res) {
                 if (!event) {
                     return utils.result(res, code.notFound, msg.eventNotFound, null);
                 }
-                if (event.userId._id === body.userId) {
+                if (event.userId._id == body.userId) {
                     return utils.result(res, code.badRequest, msg.sameUserVote, null);
                 }
                 User.findOne(
