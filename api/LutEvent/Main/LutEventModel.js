@@ -2,6 +2,7 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var ttl = require('mongoose-ttl');
+var deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 var lutEventSchema = new Schema({
     userId: {
@@ -68,5 +69,6 @@ var lutEventSchema = new Schema({
     }]
 });
 // lutEventSchema.plugin(ttl);
+lutEventSchema.plugin(deepPopulate);
 var EventModel = mongoose.model('LutEvent', lutEventSchema);
 module.exports = EventModel;

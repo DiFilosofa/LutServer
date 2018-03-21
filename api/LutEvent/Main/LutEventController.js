@@ -38,6 +38,7 @@ const createItemObject = function (callback) {
 };
 exports.createEvent = function (req, res) {
     var body = req.body;
+    console.log("___" + body);
     if (!body.userId) {
         return utils.result(res, code.badRequest, msg.noUserId, null);
     }
@@ -116,7 +117,7 @@ exports.createEvent = function (req, res) {
 exports.getAllEvents = function (req, res) {
     var userId = req.params.userId;
     Event.find()
-        .populate('Point')
+        .deepPopulate('Point userId')
         .exec(function (err, results) {
             if (err) {
                 console.log('err');
@@ -139,7 +140,7 @@ exports.getEventById = function (req, res) {
     Event.find({
         _id: req.params.eventId
     })
-        .populate('Point')
+        .deepPopulate('Point userId')
         .exec(function (err, result) {
             if (err) {
                 console.log(err);
@@ -274,7 +275,7 @@ exports.vote = function (req, res) {
         {
             _id: req.params.eventId
         }
-    ).populate('Point')
+    ).deepPopulate('Point userId')
         .exec(
             function (err, event) {
                 if (err) {
@@ -331,7 +332,7 @@ exports.vote = function (req, res) {
                                                 {
                                                     _id: req.params.eventId
                                                 })
-                                                .populate('Point')
+                                                .deepPopulate('Point userId')
                                                 .exec(function (err, result) {
                                                     if (err) {
                                                         console.log(err);
@@ -355,7 +356,7 @@ exports.vote = function (req, res) {
                                             {
                                                 _id: req.params.eventId
                                             })
-                                            .populate('Point')
+                                            .deepPopulate('Point userId')
                                             .exec(function (err, result) {
                                                 if (err) {
                                                     console.log(err);
@@ -395,7 +396,7 @@ exports.reevaluate = function (res) {
 
 function updateUserValidity(res) {
     Event.find()
-        .populate('Point')
+        .deepPopulate('Point userId')
         .exec(function (err, results) {
             if (err) {
                 console.log('err');
