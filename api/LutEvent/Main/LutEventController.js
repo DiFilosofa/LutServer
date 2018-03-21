@@ -14,7 +14,8 @@ var mongoose = require('mongoose'),
     formidable = require('formidable'),
     async = require('async'),
     fs = require('fs'),
-    path = require('path')
+    path = require('path'),
+    Cluster = require('../../Cluster/ClusterController')
 ;
 
 var imageData, imageName;
@@ -78,6 +79,7 @@ exports.createEvent = function (req, res) {
             console.log(err);
             return utils.result(res, code.serverError, msg.serverError, null);
         }
+
         newEvent.validity = userExist.reputation * 0.01; //init validity
         newEvent.save(function (err, event) {
             if (err) {
@@ -102,7 +104,8 @@ exports.createEvent = function (req, res) {
                             console.log(err);
                             return utils.result(res, code.serverError, msg.serverError, null);
                         }
-                        return utils.result(res, code.success, msg.success, event);
+                        utils.result(res, code.success, msg.success, event);
+                        Cluster.cluster();
                     }
                 );
             });
@@ -386,13 +389,9 @@ exports.vote = function (req, res) {
 
 exports.reevaluate = function (res) {
     if (updateUserValidity(res)) {
-        clusterData()
+        // cluster.calculateNextEvent()
     }
 };
-
-function clusterData() {
-
-}
 
 function updateUserValidity(res) {
     Event.find()

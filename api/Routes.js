@@ -1,34 +1,35 @@
 'use strict';
 var express = require('express');
 var jwt = require('jsonwebtoken');
-module.exports = function(app) {
+module.exports = function (app) {
     var users = require('./User/UserController');
     var events = require('./LutEvent/Main/LutEventController');
-    var apiRoutes  = express.Router();
-    apiRoutes.get('/',function (req,res) {
+    var cluster = require('./Cluster/ClusterController');
+    var apiRoutes = express.Router();
+    apiRoutes.get('/', function (req, res) {
         res.send("Server is up and running")
-        });
+    });
 
     // Account
-    apiRoutes.post('/user',users.createUser);
-    apiRoutes.post('/user/login',users.login);
-    apiRoutes.get('/user',users.getAllUser);
-    apiRoutes.get('/eventsAll/:userId',events.getAllEvents);
-    apiRoutes.get('/events/:eventId',events.getEventById);
-    apiRoutes.get('/leaderboard',users.getLeaderboardAllTime);
-    apiRoutes.get('/leaderboard/month/:time',users.getLeaderboardByMonth);
-    apiRoutes.get('/leaderboard/year/:year',users.getLeaderboardByYear);
-
-    apiRoutes.use(function (req,res,next) {
+    apiRoutes.post('/user', users.createUser);
+    apiRoutes.post('/user/login', users.login);
+    apiRoutes.get('/user', users.getAllUser);
+    apiRoutes.get('/eventsAll/:userId', events.getAllEvents);
+    apiRoutes.get('/events/:eventId', events.getEventById);
+    apiRoutes.get('/leaderboard', users.getLeaderboardAllTime);
+    apiRoutes.get('/leaderboard/month/:time', users.getLeaderboardByMonth);
+    apiRoutes.get('/leaderboard/year/:year', users.getLeaderboardByYear);
+    apiRoutes.get('/clustersAll', cluster.getAllCluster);
+    apiRoutes.use(function (req, res, next) {
         // check header or url parameters or post parameters for token
-        var token =  req.headers['authorization'];
+        var token = req.headers['authorization'];
         console.log(req.headers);
         // decode token
         if (token) {
             // verifies secret and checks exp
-            jwt.verify(token, app.get('bananaMinion'), function(err, decoded) {
+            jwt.verify(token, app.get('bananaMinion'), function (err, decoded) {
                 if (err) {
-                    return res.json({ success: false, message: 'Token expired' });
+                    return res.json({success: false, message: 'Token expired'});
                 } else {
                     // if everything is good, save to request for use in other routes
                     req.decoded = decoded;
@@ -46,19 +47,19 @@ module.exports = function(app) {
         }
     });
 
-    apiRoutes.get('/user',users.getAllUser);
-    apiRoutes.put('/user/password/:userId',users.updatePassword);
-    apiRoutes.get('/user/:userId',users.getUserById);
-    apiRoutes.put('/user/:userId',users.updateById);
+    apiRoutes.get('/user', users.getAllUser);
+    apiRoutes.put('/user/password/:userId', users.updatePassword);
+    apiRoutes.get('/user/:userId', users.getUserById);
+    apiRoutes.put('/user/:userId', users.updateById);
     apiRoutes.put('/user/avatar/:userId', users.updateUserAvatarById);
-    apiRoutes.delete('/user/:userId',users.deleteUserById);
+    apiRoutes.delete('/user/:userId', users.deleteUserById);
 
-    apiRoutes.post('/events',events.createEvent);
+    apiRoutes.post('/events', events.createEvent);
     apiRoutes.put('/events/media/:eventId', events.updateEventPhotos);
-    apiRoutes.put('/events/:eventId',events.updateEventById);
-    apiRoutes.delete('/events/:eventId',events.deleteEvent);
+    apiRoutes.put('/events/:eventId', events.updateEventById);
+    apiRoutes.delete('/events/:eventId', events.deleteEvent);
 
-    apiRoutes.post('/events/upvote/:eventId',events.vote);
+    apiRoutes.post('/events/upvote/:eventId', events.vote);
     // apiRoutes.post('/events/downvote/:eventId',events.downvote);
 
     app.use(apiRoutes);
