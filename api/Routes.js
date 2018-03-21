@@ -19,7 +19,12 @@ module.exports = function (app) {
     apiRoutes.get('/leaderboard', users.getLeaderboardAllTime);
     apiRoutes.get('/leaderboard/month/:time', users.getLeaderboardByMonth);
     apiRoutes.get('/leaderboard/year/:year', users.getLeaderboardByYear);
-    apiRoutes.get('/clustersAll', cluster.getAllCluster);
+    apiRoutes.get('/clustersAll/:userId', cluster.getAllCluster);
+    ////TESTING
+    // apiRoutes.get('/calculate', cluster.endOfPeriod);
+
+
+
     apiRoutes.use(function (req, res, next) {
         // check header or url parameters or post parameters for token
         var token = req.headers['authorization'];
