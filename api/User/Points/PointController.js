@@ -2,7 +2,7 @@
 var mongoose = require('mongoose'),
     UserPoint = mongoose.model('PointByMonth'),
     User = mongoose.model('User'),
-    lutConst = require('../../../Config/LutConstants')
+    lutConst = require('../../../config/LutConstants')
 ;
 
 exports.updateUserReputation = function (userId, pointUpdate) {
