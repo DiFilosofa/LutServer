@@ -28,9 +28,9 @@ var clusterSchema = new Schema({
         type: Schema.ObjectId,
         ref: 'LutEvent'
     }],
-    highestReputation: {
+    highestValidity: {
         type: Number,
-        default: 0.01
+        default: 0.0001
     }
 });
 clusterSchema.plugin(deepPopulate);

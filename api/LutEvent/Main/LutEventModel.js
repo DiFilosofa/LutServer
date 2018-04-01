@@ -44,7 +44,7 @@ var lutEventSchema = new Schema({
         type: Number,
         required: true
     },
-    estimated_duration: { ///Seconds
+    estimated_next_level: { ///Seconds
         type: Number,
         default: 600
     },

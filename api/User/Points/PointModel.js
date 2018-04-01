@@ -17,7 +17,7 @@ var pointSchema = new Schema({
     },
     reputation:{
         type:Number,
-        default:0
+        default:0.01
     }
 });
 
