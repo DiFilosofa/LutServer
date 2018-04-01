@@ -4,3 +4,8 @@ module.exports = {
     'secret':'minionAndGru'
 };
 
+exports.intervalTime = 300000; //300000ms = 5min
+exports.reputationWeight = 0.8;
+exports.eventPointWeight = 0.2;
+exports.clusterDistance = 0.005;
+exports.clusterMinPoints = 1;

@@ -2,11 +2,12 @@
 var mongoose = require('mongoose');
 var Schema = mongoose.Schema;
 var ttl = require('mongoose-ttl');
+var deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 var lutEventSchema = new Schema({
     userId: {
-        type: String,
-        required: true
+        type: Schema.ObjectId,
+        ref: 'User'
     },
     name: {
         type: String
@@ -43,7 +44,7 @@ var lutEventSchema = new Schema({
         type: Number,
         required: true
     },
-    estimated_duration: { ///Seconds
+    estimated_next_level: { ///Seconds
         type: Number,
         default: 600
     },
@@ -67,6 +68,7 @@ var lutEventSchema = new Schema({
         type: String
     }]
 });
-lutEventSchema.plugin(ttl);
+// lutEventSchema.plugin(ttl);
+lutEventSchema.plugin(deepPopulate);
 var EventModel = mongoose.model('LutEvent', lutEventSchema);
 module.exports = EventModel;

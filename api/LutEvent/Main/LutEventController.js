@@ -14,7 +14,8 @@ var mongoose = require('mongoose'),
     formidable = require('formidable'),
     async = require('async'),
     fs = require('fs'),
-    path = require('path')
+    path = require('path'),
+    Cluster = require('../../Cluster/ClusterController')
 ;
 
 var imageData, imageName;
@@ -37,6 +38,7 @@ const createItemObject = function (callback) {
 };
 exports.createEvent = function (req, res) {
     var body = req.body;
+    console.log("___" + body);
     if (!body.userId) {
         return utils.result(res, code.badRequest, msg.noUserId, null);
     }
@@ -58,11 +60,16 @@ exports.createEvent = function (req, res) {
     if (!body.reasons) {
         return utils.result(res, code.badRequest, msg.reasonsEmptyOrNull, null);
     }
-    if (body.estimated_duration && body.estimated_duration < 300) {
-        return utils.result(res, code.badRequest, msg.invalidDuration, null);
+    if (!body.estimated_next_level) {
+        return utils.result(res, code.badRequest, msg.nextLevelNotFound, null);
     }
     var newEvent = Event(body);
-    newEvent.ttl = body.estimated_duration ? body.estimated_duration.toString() + 's' : '30m';
+    // if (body.estimated_duration) {
+    //     newEvent.ttl = body.estimated_duration.toString() + 's';
+    // }
+    // else {
+    //     newEvent.ttl = '30m';
+    // }
     User.findOne({
         _id: body.userId
     }, function (err, userExist) {
@@ -73,6 +80,7 @@ exports.createEvent = function (req, res) {
             console.log(err);
             return utils.result(res, code.serverError, msg.serverError, null);
         }
+
         newEvent.validity = userExist.reputation * 0.01; //init validity
         newEvent.save(function (err, event) {
             if (err) {
@@ -97,7 +105,8 @@ exports.createEvent = function (req, res) {
                             console.log(err);
                             return utils.result(res, code.serverError, msg.serverError, null);
                         }
-                        return utils.result(res, code.success, msg.success, event);
+                        utils.result(res, code.success, msg.success, event);
+                        Cluster.cluster();
                     }
                 );
             });
@@ -108,7 +117,7 @@ exports.createEvent = function (req, res) {
 exports.getAllEvents = function (req, res) {
     var userId = req.params.userId;
     Event.find()
-        .populate('Point')
+        .deepPopulate('Point userId')
         .exec(function (err, results) {
             if (err) {
                 console.log('err');
@@ -131,7 +140,7 @@ exports.getEventById = function (req, res) {
     Event.find({
         _id: req.params.eventId
     })
-        .populate('Point')
+        .deepPopulate('Point userId')
         .exec(function (err, result) {
             if (err) {
                 console.log(err);
@@ -205,9 +214,9 @@ exports.updateEventPhotos = function (req, res) {
                     })
                 });
                 var url = aws_s3.dataUrlInitial + imageName;
-                var expiredTime = event.estimated_duration + 's';
-
-                event.ttl = expiredTime;
+                // var expiredTime = event.estimated_duration + 's';
+                //
+                // event.ttl = expiredTime;
                 ///update media datas
                 event.mediaDatas.push(url);
                 event.save();
@@ -266,7 +275,7 @@ exports.vote = function (req, res) {
         {
             _id: req.params.eventId
         }
-    ).populate('Point')
+    ).deepPopulate('Point userId')
         .exec(
             function (err, event) {
                 if (err) {
@@ -276,7 +285,7 @@ exports.vote = function (req, res) {
                 if (!event) {
                     return utils.result(res, code.notFound, msg.eventNotFound, null);
                 }
-                if (event.userId === body.userId) {
+                if (event.userId._id == body.userId) {
                     return utils.result(res, code.badRequest, msg.sameUserVote, null);
                 }
                 User.findOne(
@@ -319,25 +328,44 @@ exports.vote = function (req, res) {
                                             // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
                                             //     return utils.result(res, code.serverError, msg.serverError, null);
                                             // }
-                                            return utils.result(res, code.success, msg.success, newEvent);
+                                            Event.findOne(
+                                                {
+                                                    _id: req.params.eventId
+                                                })
+                                                .deepPopulate('Point userId')
+                                                .exec(function (err, result) {
+                                                    if (err) {
+                                                        console.log(err);
+                                                        return utils.result(res, code.serverError, msg.serverError, null);
+                                                    }
+                                                    return utils.result(res, code.success, msg.success, result);
+                                                })
                                         });
                                     });
                                 }
                                 else {
                                     eventPoint.points = eventPoint.scoreSum / numberOfVotes;
-                                    eventPoint.save();
                                     event.validity = user.reputation * eventPoint.points;
+                                    eventPoint.save();
                                     event.save(function (err, newEvent) {
-                                            if (err) {
-                                                console.log(err);
-                                                return utils.result(res, code.serverError, msg.serverError, null);
-                                            }
-                                            // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
-                                            //     return utils.result(res, code.serverError, msg.serverError, null);
-                                            // }
-                                            return utils.result(res, code.success, msg.success, newEvent);
+                                        if (err) {
+                                            console.log(err);
+                                            return utils.result(res, code.serverError, msg.serverError, null);
                                         }
-                                    );
+                                        Event.findOne(
+                                            {
+                                                _id: req.params.eventId
+                                            })
+                                            .deepPopulate('Point userId')
+                                            .exec(function (err, result) {
+                                                if (err) {
+                                                    console.log(err);
+                                                    return utils.result(res, code.serverError, msg.serverError, null);
+                                                }
+                                                return utils.result(res, code.success, msg.success, result);
+                                            })
+                                    });
+
                                 }
                             }
                         );
@@ -347,15 +375,43 @@ exports.vote = function (req, res) {
         );
 };
 
-function updateUserPoint(pointUpdate, eventId) {
-    Event.findOne(
-        {_id: eventId},
-        function (err, event) {
+// function updateUserPoint(pointUpdate, userId) {
+//     Event.findOne(
+//         {_id: eventId},
+//         function (err, event) {
+//             if (err) {
+//                 console.log(err);
+//                 return false;
+//             }
+//             return UserPointController.updateUserReputation(event.userId, pointUpdate)
+//         }
+//     );
+// }
+
+exports.reevaluate = function (res) {
+    if (updateUserValidity(res)) {
+        // cluster.calculateNextEvent()
+    }
+};
+
+function updateUserValidity(res) {
+    Event.find()
+        .deepPopulate('Point userId')
+        .exec(function (err, results) {
             if (err) {
-                console.log(err);
-                return false;
+                console.log('err');
+                return utils.result(res, code.serverError, msg.serverError, null);
             }
-            return UserPointController.updatePoint(event.userId, pointUpdate)
-        }
-    );
+            results.forEach(function (element) {
+                User.findOne({
+                    _id: element.userId
+                }, function (err, user) {
+                    if (err) {
+                        console.log('err');
+                        return utils.result(res, code.serverError, msg.serverError, null);
+                    }
+                    return UserPointController.updateUserReputation(element.userId, element.Point.points)
+                })
+            });
+        })
 }
