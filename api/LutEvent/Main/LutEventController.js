@@ -60,7 +60,8 @@ exports.createEvent = function (req, res) {
     if (!body.reasons) {
         return utils.result(res, code.badRequest, msg.reasonsEmptyOrNull, null);
     }
-    if (!body.estimated_next_level) {
+    if (body.estimated_next_level == null) {
+        console.log("null");
         return utils.result(res, code.badRequest, msg.nextLevelNotFound, null);
     }
     var newEvent = Event(body);
