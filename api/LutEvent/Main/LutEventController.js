@@ -125,30 +125,31 @@ exports.getAllEvents = function (req, res) {
                 console.log('err');
                 return utils.result(res, code.serverError, msg.serverError, null);
             }
-            var numberOfEvents = results.length;
-            var tempList = results.slice();
-            if (parseInt(userId) !== -1) {
-                for (var index = 0; index < numberOfEvents; index++) {
-                    var temp = results[index].toJSON();
-                    results[index].Point.Voted.findOne({userId: results[index].userId}
-                        , function (err, feedback) {
-                            if (!feedback) {
-                                temp.isUpvoted = false;
-                                temp.votedScore = null;
-                            }
-                            else if (err) {
-                                console.log('err');
-                                return utils.result(res, code.serverError, msg.serverError, null);
-                            }
-                            else {
-                                temp.isUpvoted = true;
-                                temp.isUpvoted = feedback.score
-                            }
-                            tempList[index] = temp;
-                        });
-                }
-            }
-            return utils.result(res, code.success, msg.success, tempList);
+            return utils.result(res, code.success, msg.success, results);
+            //
+            // var numberOfEvents = results.length;
+            // var tempList = results.slice();
+            // if (parseInt(userId) !== -1) {
+            //     for (var index = 0; index < numberOfEvents; index++) {
+            //         var temp = results[index].toJSON();
+            //         results[index].Point.Voted.findOne({userId: results[index].userId}
+            //             , function (err, feedback) {
+            //                 if (!feedback) {
+            //                     temp.isUpvoted = false;
+            //                     temp.votedScore = null;
+            //                 }
+            //                 else if (err) {
+            //                     console.log('err');
+            //                     return utils.result(res, code.serverError, msg.serverError, null);
+            //                 }
+            //                 else {
+            //                     temp.isUpvoted = true;
+            //                     temp.isUpvoted = feedback.score
+            //                 }
+            //                 tempList[index] = temp;
+            //             });
+            //     }
+            // }
         })
 };
 

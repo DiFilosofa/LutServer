@@ -1,6 +1,6 @@
 // config/database.js
 module.exports = {
-    // 'url' : 'mongodb://lut_admin:mrtiken@ds117956.mlab.com:17956/lut_database',
+    'url' : 'mongodb://lut_admin:mrtiken@ds117956.mlab.com:17956/lut_database',
     // 'url' : 'mongodb://lut_admin:Quanrondo9@ds123029.mlab.com:23029/lut_testing',
     'secret':'minionAndGru'
 };
