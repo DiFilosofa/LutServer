@@ -19,8 +19,9 @@ var eventPointsSchema = new Schema({
         type:Number,
         default: 0
     },
-    VotedUsers:[{
-        type:Schema.ObjectId
+    Voted:[{
+        type:Schema.ObjectId,
+        ref: 'EventFeedback'
     }]
 });
 var EventPoint = mongoose.model('LutEventPoint', eventPointsSchema);

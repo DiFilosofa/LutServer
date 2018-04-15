@@ -100,7 +100,7 @@ exports.getAllCluster = function (req, res) {
         return utils.result(res, code.badRequest, msg.noUserId, null);
     }
     Cluster.find()
-        .deepPopulate('Events.Point Events.userId')
+        .deepPopulate('Events.Point, Events.userId, Events.Point.Voted')
         .exec(function (err, clusters) {
                 if (err) {
                     console.log(err);
@@ -110,7 +110,18 @@ exports.getAllCluster = function (req, res) {
                     clusters.forEach(function (cluster, clusterIndex, arr) {
                         var tempEventList = cluster.Events;
                         tempEventList.forEach(function (tempEvent, eventIndex, arr) {
-                            tempEvent.isUpvoted = (tempEventList[eventIndex].Point.VotedUsers.indexOf(userId) > -1);
+                            var isVotedArray = tempEvent.Point.Voted.filter( voted =>
+                                voted.userId == userId
+                            )
+                            if(isVotedArray.length == 0){
+                                tempEvent.isUpvoted = false;
+                                tempEvent.votedScore = null;
+                            }
+                            else{
+                                tempEvent.isUpvoted = true;
+                                tempEvent.votedScore = isVotedArray[0].score;
+                            }
+                            // tempEvent.isUpvoted = (tempEventList[eventIndex].Point.Voted.indexOf(userId) > -1);
                             cluster.Event = tempEventList;
                         });
                     });

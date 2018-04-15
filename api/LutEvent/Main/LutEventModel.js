@@ -64,6 +64,10 @@ var lutEventSchema = new Schema({
     isUpvoted: {
         type: Boolean
     },
+    votedScore:{
+        type:Number,
+        default: null
+    },
     mediaDatas: [{
         type: String
     }]

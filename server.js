@@ -6,11 +6,12 @@ var bodyParser = require('body-parser');
 
 
 //Schemas registration
-var Cluster = require('./api/Cluster/ClusterModel.js'),
+var EventFeedback = require('./api/LutEvent/Feedback/FeedbackModel.js');
+    Cluster = require('./api/Cluster/ClusterModel.js'),
     UserModel = require('./api/User/UserModel.js'),
     LutEvent = require('./api/LutEvent/Main/LutEventModel.js'),
     GPSData = require('./api/GPSData/GPSDataModel.js'),
-    LutEventPoint = require('./api/LutEvent/Main/Points/LutEventPointModel.js'),
+    LutEventPoint = require('./api/LutEvent/Points/LutEventPointModel.js'),
     PointByMonth = require('./api/User/Points/PointModel.js'),
     EventController = require('./api/LutEvent/Main/LutEventController.js')
 ;

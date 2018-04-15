@@ -15,7 +15,8 @@ var mongoose = require('mongoose'),
     async = require('async'),
     fs = require('fs'),
     path = require('path'),
-    Cluster = require('../../Cluster/ClusterController')
+    Cluster = require('../../Cluster/ClusterController'),
+    Feedback = mongoose.model('EventFeedback')
 ;
 
 var imageData, imageName;
@@ -118,7 +119,7 @@ exports.createEvent = function (req, res) {
 exports.getAllEvents = function (req, res) {
     var userId = req.params.userId;
     Event.find()
-        .deepPopulate('Point userId')
+        .deepPopulate('Point userId Point.Voted')
         .exec(function (err, results) {
             if (err) {
                 console.log('err');
@@ -129,8 +130,22 @@ exports.getAllEvents = function (req, res) {
             if (parseInt(userId) !== -1) {
                 for (var index = 0; index < numberOfEvents; index++) {
                     var temp = results[index].toJSON();
-                    temp.isUpvoted = (results[index].Point.VotedUsers.indexOf(userId) > -1);
-                    tempList[index] = temp;
+                    results[index].Point.Voted.findOne({userId: results[index].userId}
+                        , function (err, feedback) {
+                            if (!feedback) {
+                                temp.isUpvoted = false;
+                                temp.votedScore = null;
+                            }
+                            else if (err) {
+                                console.log('err');
+                                return utils.result(res, code.serverError, msg.serverError, null);
+                            }
+                            else {
+                                temp.isUpvoted = true;
+                                temp.isUpvoted = feedback.score
+                            }
+                            tempList[index] = temp;
+                        });
                 }
             }
             return utils.result(res, code.success, msg.success, tempList);
@@ -301,75 +316,63 @@ exports.vote = function (req, res) {
                             console.log(err);
                             return utils.result(res, code.serverError, msg.serverError, null);
                         }
-                        EventPoint.findOne(
-                            {
-                                _id: event.Point
-                            },
-                            function (err, eventPoint) {
-                                //check if the user exist in vote list
-                                var voted = eventPoint.VotedUsers.indexOf(body.userId) > -1;
-                                if (!voted) {
-                                    eventPoint.scoreSum = eventPoint.scoreSum + body.score; //update score sum
-                                    eventPoint.VotedUsers.push(body.userId); //push user in upvote list
-                                }
-                                var numberOfVotes = eventPoint.VotedUsers.length;
-
-                                if (numberOfVotes < 2) {
-                                    eventPoint.save(function (err, newEventPoint) {
-                                        // var userPointToUpdate = 1;
+                        EventPoint.findOne({_id: event.Point})
+                            .populate('Voted')
+                            .exec(function (err, eventPoint) {
+                                var isVotedArray = eventPoint.Voted.filter(voted =>
+                                    voted.userId == body.userId
+                                )
+                                if (isVotedArray.length == 0) {
+                                    var newFeedback = new Feedback({
+                                        userId: body.userId,
+                                        score: body.score
+                                    });
+                                    newFeedback.save(function (err, feedback) {
                                         if (err) {
                                             console.log(err);
                                             return utils.result(res, code.serverError, msg.serverError, null);
                                         }
-                                        event.save(function (err, newEvent) {
-                                            if (err) {
-                                                console.log(err);
-                                                return utils.result(res, code.serverError, msg.serverError, null);
-                                            }
-                                            // if (updateUserPoint(userPointToUpdate, newEventPoint.event_id) === false) {
-                                            //     return utils.result(res, code.serverError, msg.serverError, null);
-                                            // }
-                                            Event.findOne(
-                                                {
-                                                    _id: req.params.eventId
-                                                })
-                                                .deepPopulate('Point userId')
-                                                .exec(function (err, result) {
-                                                    if (err) {
-                                                        console.log(err);
-                                                        return utils.result(res, code.serverError, msg.serverError, null);
-                                                    }
-                                                    return utils.result(res, code.success, msg.success, result);
-                                                })
-                                        });
+                                        eventPoint.Voted.push(feedback);
+                                        eventPoint.scoreSum = eventPoint.scoreSum + body.score; //update score sum
+                                        var numberOfVotes = eventPoint.Voted.length;
+                                        if (numberOfVotes < 2) {
+                                            eventPoint.save().then(
+                                                event.save().then(
+                                                    Event.findOne({_id: req.params.eventId})
+                                                        .deepPopulate('Point userId')
+                                                        .exec(function (err, result) {
+                                                            if (err) {
+                                                                console.log(err);
+                                                                return utils.result(res, code.serverError, msg.serverError, null);
+                                                            }
+                                                            return utils.result(res, code.success, msg.success, result);
+                                                        })
+                                                )
+                                            );
+                                        }
+                                        else {
+                                            eventPoint.points = eventPoint.scoreSum / numberOfVotes;
+                                            event.validity = user.reputation * eventPoint.points;
+                                            eventPoint.save().then(
+                                                event.save().then(
+                                                    Event.findOne({_id: req.params.eventId})
+                                                        .deepPopulate('Point userId')
+                                                        .exec(function (err, result) {
+                                                            if (err) {
+                                                                console.log(err);
+                                                                return utils.result(res, code.serverError, msg.serverError, null);
+                                                            }
+                                                            return utils.result(res, code.success, msg.success, result);
+                                                        })
+                                                )
+                                            );
+                                        }
                                     });
                                 }
                                 else {
-                                    eventPoint.points = eventPoint.scoreSum / numberOfVotes;
-                                    event.validity = user.reputation * eventPoint.points;
-                                    eventPoint.save();
-                                    event.save(function (err, newEvent) {
-                                        if (err) {
-                                            console.log(err);
-                                            return utils.result(res, code.serverError, msg.serverError, null);
-                                        }
-                                        Event.findOne(
-                                            {
-                                                _id: req.params.eventId
-                                            })
-                                            .deepPopulate('Point userId')
-                                            .exec(function (err, result) {
-                                                if (err) {
-                                                    console.log(err);
-                                                    return utils.result(res, code.serverError, msg.serverError, null);
-                                                }
-                                                return utils.result(res, code.success, msg.success, result);
-                                            })
-                                    });
-
+                                    return utils.result(res, code.badRequest, msg.alreadyVoted, null);
                                 }
-                            }
-                        );
+                            });
                     }
                 );
             }
